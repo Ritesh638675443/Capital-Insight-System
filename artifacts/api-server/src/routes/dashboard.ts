@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { parseCsv, loadCsv } from "../lib/csv";
+import { loadCsv } from "../lib/csv";
 import path from "path";
 
 const router = Router();
@@ -13,25 +13,27 @@ router.get("/dashboard/summary", async (req, res) => {
       loadCsv(path.join(DATA_DIR, "catastrophe_risk_scenarios.csv")),
     ]);
 
-    const totalAssets = portfolio.reduce((s: number, r: Record<string, string>) => s + parseFloat(r["market_value"] || r["Market_Value"] || "0"), 0);
-    const latestSolvency = solvency.sort((a: Record<string, string>, b: Record<string, string>) => parseInt(b["year"] || b["Year"] || "0") - parseInt(a["year"] || a["Year"] || "0"))[0] || {};
-    const availableCapital = parseFloat(latestSolvency["available_capital"] || latestSolvency["Available_Capital"] || "500000000");
-    const requiredCapital = parseFloat(latestSolvency["required_capital"] || latestSolvency["Required_Capital"] || "350000000");
-    const solvencyRatio = availableCapital / requiredCapital;
-    const totalInsuredLoss = catScenarios.reduce((s: number, r: Record<string, string>) => s + parseFloat(r["insured_loss"] || r["Insured_Loss"] || "0"), 0);
-    const totalReinsuranceRecovery = catScenarios.reduce((s: number, r: Record<string, string>) => s + parseFloat(r["reinsurance_recovery"] || r["Reinsurance_Recovery"] || "0"), 0);
+    const totalAssets = portfolio.reduce((s: number, r) => s + parseFloat(r["Market_Value_USD"] || "0"), 0);
+    const sorted = [...solvency].sort((a, b) => parseInt(b["Year"] || "0") - parseInt(a["Year"] || "0"));
+    const latestSolvency = sorted[0] || {};
+    const availableCapital = parseFloat(latestSolvency["Available_Capital_USD"] || "544093773");
+    const requiredCapital = parseFloat(latestSolvency["Required_Capital_USD"] || "388673534");
+    const solvencyRatio = parseFloat(latestSolvency["Solvency_Ratio"] || "1.4");
+    const totalInsuredLoss = catScenarios.reduce((s: number, r) => s + parseFloat(r["Insured_Loss_USD"] || "0"), 0);
+    const totalReinsuranceRecovery = catScenarios.reduce((s: number, r) => s + parseFloat(r["Reinsurance_Recovery_USD"] || "0"), 0);
 
+    const assets = totalAssets || 2_450_000_000;
     res.json({
-      totalAssets: totalAssets || 2_450_000_000,
-      totalLiabilities: (totalAssets || 2_450_000_000) * 0.74,
-      solvencyRatio: solvencyRatio || 1.43,
+      totalAssets: assets,
+      totalLiabilities: assets * 0.74,
+      solvencyRatio,
       portfolioReturn: 0.0782,
       portfolioRisk: 0.1245,
-      var95: (totalAssets || 2_450_000_000) * 0.0387,
-      tvar95: (totalAssets || 2_450_000_000) * 0.0521,
+      var95: assets * 0.0387,
+      tvar95: assets * 0.0521,
       catastropheExposure: totalInsuredLoss || 3_200_000_000,
       reinsuranceCoverage: totalReinsuranceRecovery || 2_100_000_000,
-      fundingGap: ((totalAssets || 2_450_000_000) * 0.74) * 0.05,
+      fundingGap: assets * 0.74 * 0.05,
       durationGap: 1.85,
       currentYear: new Date().getFullYear(),
     });
@@ -44,17 +46,11 @@ router.get("/dashboard/summary", async (req, res) => {
 router.get("/dashboard/portfolio-allocation", async (req, res) => {
   try {
     const portfolio = await loadCsv(path.join(DATA_DIR, "portfolio_holdings.csv"));
-    const byAsset: Record<string, number> = {};
-    for (const row of portfolio) {
-      const asset = row["asset_class"] || row["Asset_Class"] || row["asset"] || "Other";
-      const val = parseFloat(row["market_value"] || row["Market_Value"] || row["allocation_weight"] || "0");
-      byAsset[asset] = (byAsset[asset] || 0) + val;
-    }
-    const total = Object.values(byAsset).reduce((s, v) => s + v, 0) || 1;
-    const result = Object.entries(byAsset).map(([asset, value]) => ({
-      asset,
-      weight: value / total,
-      value,
+    const total = portfolio.reduce((s: number, r) => s + parseFloat(r["Market_Value_USD"] || "0"), 0) || 1;
+    const result = portfolio.map((r) => ({
+      asset: r["Asset"] || "Other",
+      weight: parseFloat(r["Allocation_Weight"] || "0"),
+      value: parseFloat(r["Market_Value_USD"] || "0"),
     }));
     res.json(result);
   } catch (e) {
@@ -74,11 +70,11 @@ router.get("/dashboard/solvency-trend", async (req, res) => {
   try {
     const solvency = await loadCsv(path.join(DATA_DIR, "solvency_tracking.csv"));
     const result = solvency
-      .map((r: Record<string, string>) => ({
-        year: parseInt(r["year"] || r["Year"] || "2027"),
-        solvencyRatio: parseFloat(r["solvency_ratio"] || r["Solvency_Ratio"] || "1.4"),
-        availableCapital: parseFloat(r["available_capital"] || r["Available_Capital"] || "500000000"),
-        requiredCapital: parseFloat(r["required_capital"] || r["Required_Capital"] || "350000000"),
+      .map((r) => ({
+        year: parseInt(r["Year"] || "2027"),
+        solvencyRatio: parseFloat(r["Solvency_Ratio"] || "1.4"),
+        availableCapital: parseFloat(r["Available_Capital_USD"] || "0"),
+        requiredCapital: parseFloat(r["Required_Capital_USD"] || "0"),
       }))
       .sort((a, b) => a.year - b.year);
     res.json(result);
@@ -90,8 +86,8 @@ router.get("/dashboard/solvency-trend", async (req, res) => {
 
 router.get("/dashboard/risk-heatmap", async (req, res) => {
   res.json([
-    { category: "Market Risk", subcategory: "Equity Risk", severity: 4, likelihood: 3, riskScore: 12 },
     { category: "Market Risk", subcategory: "Interest Rate Risk", severity: 5, likelihood: 4, riskScore: 20 },
+    { category: "Market Risk", subcategory: "Equity Risk", severity: 4, likelihood: 3, riskScore: 12 },
     { category: "Market Risk", subcategory: "Credit Spread Risk", severity: 4, likelihood: 3, riskScore: 12 },
     { category: "Market Risk", subcategory: "FX Risk", severity: 3, likelihood: 2, riskScore: 6 },
     { category: "Underwriting Risk", subcategory: "Catastrophe Risk", severity: 5, likelihood: 3, riskScore: 15 },

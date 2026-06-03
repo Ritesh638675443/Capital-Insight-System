@@ -5,72 +5,79 @@ import path from "path";
 const router = Router();
 const DATA_DIR = path.resolve(process.cwd(), "data");
 
+// SP500 CSV has 3 header rows: row0=Price/Close/..., row1=Ticker/^GSPC/..., row2=Date/empty...
+// Actual data starts at row3. csv-parse with columns:true uses row0 as headers.
+function parseSp500Rows(rows: Record<string, string>[]) {
+  return rows
+    .filter((r) => {
+      const date = r["Price"] || "";
+      return /^\d{4}-\d{2}-\d{2}$/.test(date);
+    })
+    .map((r) => ({ date: r["Price"] || "", value: parseFloat(r["Close"] || "0") }))
+    .filter((r) => r.value > 0);
+}
+
+function parseVixRows(rows: Record<string, string>[]) {
+  return rows
+    .filter((r) => {
+      const date = r["Price"] || "";
+      return /^\d{4}-\d{2}-\d{2}$/.test(date);
+    })
+    .map((r) => ({ date: r["Price"] || "", value: parseFloat(r["Close"] || "0") }))
+    .filter((r) => r.value > 0);
+}
+
 router.get("/risk/var-analysis", async (req, res) => {
   try {
-    const [sp500, vix] = await Promise.all([
+    const [sp500Rows, vixRows] = await Promise.all([
       loadCsv(path.join(DATA_DIR, "sp500_monthly.csv")),
       loadCsv(path.join(DATA_DIR, "vix_monthly.csv")),
     ]);
 
-    const values = sp500
-      .map((r: Record<string, string>) => parseFloat(r["SP500"] || r["Close"] || r["close"] || r["value"] || "0"))
-      .filter((v) => v > 0);
+    const sp500 = parseSp500Rows(sp500Rows);
+    const vix = parseVixRows(vixRows);
 
+    const values = sp500.map((r) => r.value);
     const returns: number[] = [];
     for (let i = 1; i < values.length; i++) {
       returns.push((values[i] - values[i - 1]) / values[i - 1]);
     }
-    returns.sort((a, b) => a - b);
+    const sorted = [...returns].sort((a, b) => a - b);
+    const n = sorted.length;
 
-    const n = returns.length;
-    const historicalVar95 = returns[Math.floor(n * 0.05)] || -0.0387;
-    const historicalVar99 = returns[Math.floor(n * 0.01)] || -0.0621;
+    const historicalVar95 = Math.abs(sorted[Math.floor(n * 0.05)] || -0.0387);
+    const historicalVar99 = Math.abs(sorted[Math.floor(n * 0.01)] || -0.0621);
 
-    const mean = returns.reduce((s, v) => s + v, 0) / n;
-    const variance = returns.reduce((s, v) => s + (v - mean) ** 2, 0) / n;
+    const mean = returns.reduce((s, v) => s + v, 0) / (n || 1);
+    const variance = returns.reduce((s, v) => s + (v - mean) ** 2, 0) / (n || 1);
     const stdDev = Math.sqrt(variance);
-    const z95 = -1.645;
-    const z99 = -2.326;
-    const parametricVar95 = mean + z95 * stdDev;
-    const parametricVar99 = mean + z99 * stdDev;
+    const parametricVar95 = Math.abs(mean + -1.645 * stdDev);
+    const parametricVar99 = Math.abs(mean + -2.326 * stdDev);
 
-    const tailReturns95 = returns.filter((r) => r <= historicalVar95);
-    const tvar95 = tailReturns95.length > 0 ? tailReturns95.reduce((s, v) => s + v, 0) / tailReturns95.length : historicalVar95 * 1.35;
+    const tail95 = sorted.filter((r) => r <= -historicalVar95);
+    const tvar95 = tail95.length > 0 ? Math.abs(tail95.reduce((s, v) => s + v, 0) / tail95.length) : historicalVar95 * 1.35;
+    const tail99 = sorted.filter((r) => r <= -historicalVar99);
+    const tvar99 = tail99.length > 0 ? Math.abs(tail99.reduce((s, v) => s + v, 0) / tail99.length) : historicalVar99 * 1.35;
 
-    const tailReturns99 = returns.filter((r) => r <= historicalVar99);
-    const tvar99 = tailReturns99.length > 0 ? tailReturns99.reduce((s, v) => s + v, 0) / tailReturns99.length : historicalVar99 * 1.35;
-
-    let maxDrawdown = 0;
-    let peak = values[0];
+    let maxDrawdown = 0, peak = values[0] || 1;
     for (const v of values) {
       if (v > peak) peak = v;
       const dd = (v - peak) / peak;
       if (dd < maxDrawdown) maxDrawdown = dd;
     }
 
-    const latestVix = vix[vix.length - 1];
-    const currentVix = parseFloat(latestVix?.["VIXCLS"] || latestVix?.["Close"] || latestVix?.["close"] || latestVix?.["value"] || "18");
+    const currentVix = vix[vix.length - 1]?.value || 18;
 
     const buckets: Record<string, number> = {};
     for (const r of returns) {
-      const bucket = `${(Math.floor(r * 20) / 20).toFixed(2)}`;
-      buckets[bucket] = (buckets[bucket] || 0) + 1;
+      const b = (Math.floor(r * 20) / 20).toFixed(2);
+      buckets[b] = (buckets[b] || 0) + 1;
     }
     const returnsDistribution = Object.entries(buckets)
       .sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]))
-      .map(([bucket, count]) => ({ bucket, count, frequency: count / n }));
+      .map(([bucket, count]) => ({ bucket, count, frequency: count / (n || 1) }));
 
-    res.json({
-      historicalVar95: Math.abs(historicalVar95),
-      historicalVar99: Math.abs(historicalVar99),
-      parametricVar95: Math.abs(parametricVar95),
-      parametricVar99: Math.abs(parametricVar99),
-      tvar95: Math.abs(tvar95),
-      tvar99: Math.abs(tvar99),
-      maxDrawdown,
-      currentVix,
-      returnsDistribution,
-    });
+    res.json({ historicalVar95, historicalVar99, parametricVar95, parametricVar99, tvar95, tvar99, maxDrawdown, currentVix, returnsDistribution });
   } catch (e) {
     req.log.error(e, "VaR analysis error");
     res.status(500).json({ error: "Internal server error" });
@@ -79,40 +86,23 @@ router.get("/risk/var-analysis", async (req, res) => {
 
 router.get("/risk/volatility-trend", async (req, res) => {
   try {
-    const [sp500, vix] = await Promise.all([
+    const [sp500Rows, vixRows] = await Promise.all([
       loadCsv(path.join(DATA_DIR, "sp500_monthly.csv")),
       loadCsv(path.join(DATA_DIR, "vix_monthly.csv")),
     ]);
-
-    const sp500Values = sp500.map((r: Record<string, string>) => ({
-      date: r["DATE"] || r["date"] || r["Date"] || "",
-      value: parseFloat(r["SP500"] || r["Close"] || r["close"] || r["value"] || "0"),
-    })).filter((r) => r.value > 0 && r.date);
-
+    const sp500 = parseSp500Rows(sp500Rows);
     const vixMap: Record<string, number> = {};
-    for (const r of vix) {
-      const d = r["DATE"] || r["date"] || r["Date"] || "";
-      const v = parseFloat(r["VIXCLS"] || r["Close"] || r["close"] || r["value"] || "0");
-      if (d && v > 0) vixMap[d] = v;
-    }
+    for (const r of parseVixRows(vixRows)) vixMap[r.date] = r.value;
 
     const window = 12;
-    const result = sp500Values.slice(window).map((r, i) => {
-      const slice = sp500Values.slice(i, i + window).map((s) => s.value);
-      const returns = slice.slice(1).map((v, j) => (v - slice[j]) / slice[j]);
-      const mean = returns.reduce((s, v) => s + v, 0) / returns.length;
-      const variance = returns.reduce((s, v) => s + (v - mean) ** 2, 0) / returns.length;
-      const rollingVol = Math.sqrt(variance * 12) * 100;
-      const prev = sp500Values[i + window - 1]?.value || r.value;
-      const sp500Return = prev !== 0 ? (r.value - prev) / prev * 100 : 0;
-      return {
-        date: r.date,
-        rollingVolatility: rollingVol,
-        vix: vixMap[r.date] || 18,
-        sp500Return,
-      };
+    const result = sp500.slice(window).map((r, i) => {
+      const slice = sp500.slice(i, i + window).map((s) => s.value);
+      const rets = slice.slice(1).map((v, j) => (v - slice[j]) / slice[j]);
+      const m = rets.reduce((s, v) => s + v, 0) / (rets.length || 1);
+      const vol = Math.sqrt(rets.reduce((s, v) => s + (v - m) ** 2, 0) / (rets.length || 1) * 12) * 100;
+      const prev = sp500[i + window - 1]?.value || r.value;
+      return { date: r.date, rollingVolatility: vol, vix: vixMap[r.date] || 18, sp500Return: prev !== 0 ? (r.value - prev) / prev * 100 : 0 };
     }).slice(-120);
-
     res.json(result);
   } catch (e) {
     req.log.error(e, "volatility trend error");
@@ -122,19 +112,12 @@ router.get("/risk/volatility-trend", async (req, res) => {
 
 router.get("/risk/drawdown", async (req, res) => {
   try {
-    const sp500 = await loadCsv(path.join(DATA_DIR, "sp500_monthly.csv"));
-    const series = sp500
-      .map((r: Record<string, string>) => ({
-        date: r["DATE"] || r["date"] || r["Date"] || "",
-        price: parseFloat(r["SP500"] || r["Close"] || r["close"] || r["value"] || "0"),
-      }))
-      .filter((r) => r.price > 0 && r.date)
-      .slice(-120);
-
-    let peak = series[0]?.price || 1;
+    const rows = await loadCsv(path.join(DATA_DIR, "sp500_monthly.csv"));
+    const series = parseSp500Rows(rows).slice(-120);
+    let peak = series[0]?.value || 1;
     const result = series.map((r) => {
-      if (r.price > peak) peak = r.price;
-      return { date: r.date, drawdown: (r.price - peak) / peak, price: r.price };
+      if (r.value > peak) peak = r.value;
+      return { date: r.date, drawdown: (r.value - peak) / peak, price: r.value };
     });
     res.json(result);
   } catch (e) {
@@ -146,17 +129,22 @@ router.get("/risk/drawdown", async (req, res) => {
 router.get("/risk/capital-charges", async (req, res) => {
   try {
     const charges = await loadCsv(path.join(DATA_DIR, "solvency_capital_charges.csv"));
-    const result = charges.map((r: Record<string, string>) => ({
-      assetType: r["asset_type"] || r["Asset_Type"] || r["asset_class"] || "Unknown",
-      capitalCharge: parseFloat(r["capital_charge"] || r["Capital_Charge"] || r["charge_rate"] || "0"),
-      marketValue: parseFloat(r["market_value"] || r["Market_Value"] || "0"),
-      capitalRequired: parseFloat(r["capital_required"] || r["Capital_Required"] || "0"),
-      weight: parseFloat(r["weight"] || r["allocation_weight"] || "0"),
-    }));
+    const portfolioMap: Record<string, number> = {
+      "Equity": 490_000_000,
+      "Corporate Bond": 612_500_000,
+      "Government Bond": 857_500_000,
+      "Real Estate": 245_000_000,
+      "Cash": 73_500_000,
+    };
+    const result = charges.map((r) => {
+      const at = r["Asset_Type"] || "Unknown";
+      const charge = parseFloat(r["Capital_Charge"] || "0");
+      const mv = portfolioMap[at] || 100_000_000;
+      return { assetType: at, capitalCharge: charge, marketValue: mv, capitalRequired: mv * charge, weight: mv / 2_450_000_000 };
+    });
     res.json(result.length > 0 ? result : [
       { assetType: "Government Bonds", capitalCharge: 0.0025, marketValue: 857_500_000, capitalRequired: 2_143_750, weight: 0.35 },
-      { assetType: "Corporate Bonds (IG)", capitalCharge: 0.025, marketValue: 490_000_000, capitalRequired: 12_250_000, weight: 0.20 },
-      { assetType: "Corporate Bonds (HY)", capitalCharge: 0.075, marketValue: 122_500_000, capitalRequired: 9_187_500, weight: 0.05 },
+      { assetType: "Corporate Bonds", capitalCharge: 0.025, marketValue: 612_500_000, capitalRequired: 15_312_500, weight: 0.25 },
       { assetType: "Listed Equities", capitalCharge: 0.39, marketValue: 490_000_000, capitalRequired: 191_100_000, weight: 0.20 },
       { assetType: "Real Estate", capitalCharge: 0.25, marketValue: 245_000_000, capitalRequired: 61_250_000, weight: 0.10 },
       { assetType: "Alternatives", capitalCharge: 0.49, marketValue: 171_500_000, capitalRequired: 84_035_000, weight: 0.07 },
