@@ -3,20 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Insurance ALM Decision Support System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: dashboard
+  - name: alm
+  - name: portfolio
+  - name: risk
+  - name: esg
+  - name: optimization
+  - name: catastrophe
+  - name: solvency
+  - name: scenario
+  - name: assistant
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,434 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Executive dashboard KPIs
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/portfolio-allocation:
+    get:
+      operationId: getDashboardPortfolioAllocation
+      tags: [dashboard]
+      summary: Portfolio allocation breakdown
+      responses:
+        "200":
+          description: Portfolio allocation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AllocationItem"
+
+  /dashboard/solvency-trend:
+    get:
+      operationId: getDashboardSolvencyTrend
+      tags: [dashboard]
+      summary: Solvency ratio trend over years
+      responses:
+        "200":
+          description: Solvency trend
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SolvencyTrendItem"
+
+  /dashboard/risk-heatmap:
+    get:
+      operationId: getDashboardRiskHeatmap
+      tags: [dashboard]
+      summary: Risk heatmap data by category
+      responses:
+        "200":
+          description: Risk heatmap
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RiskHeatmapItem"
+
+  /alm/liability-projection:
+    get:
+      operationId: getAlmLiabilityProjection
+      tags: [alm]
+      summary: Asset and liability projections with PV
+      responses:
+        "200":
+          description: ALM projection data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlmProjection"
+
+  /alm/duration-analysis:
+    get:
+      operationId: getAlmDurationAnalysis
+      tags: [alm]
+      summary: Duration gap and convexity analysis
+      responses:
+        "200":
+          description: Duration analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DurationAnalysis"
+
+  /alm/cashflow-matching:
+    get:
+      operationId: getAlmCashflowMatching
+      tags: [alm]
+      summary: Cash flow matching schedule
+      responses:
+        "200":
+          description: Cash flow matching
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CashflowMatchItem"
+
+  /portfolio/summary:
+    get:
+      operationId: getPortfolioSummary
+      tags: [portfolio]
+      summary: Portfolio return, volatility, VaR
+      responses:
+        "200":
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioSummary"
+
+  /portfolio/holdings:
+    get:
+      operationId: getPortfolioHoldings
+      tags: [portfolio]
+      summary: Portfolio holdings with weights and values
+      responses:
+        "200":
+          description: Holdings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HoldingItem"
+
+  /portfolio/sector-exposure:
+    get:
+      operationId: getPortfolioSectorExposure
+      tags: [portfolio]
+      summary: Sector exposure from S&P 500
+      responses:
+        "200":
+          description: Sector exposure
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SectorExposureItem"
+
+  /portfolio/sp500-performance:
+    get:
+      operationId: getPortfolioSp500Performance
+      tags: [portfolio]
+      summary: S&P 500 monthly performance
+      responses:
+        "200":
+          description: S&P 500 performance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSeriesPoint"
+
+  /risk/var-analysis:
+    get:
+      operationId: getRiskVarAnalysis
+      tags: [risk]
+      summary: Historical, parametric VaR and TVaR
+      responses:
+        "200":
+          description: VaR analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VarAnalysis"
+
+  /risk/volatility-trend:
+    get:
+      operationId: getRiskVolatilityTrend
+      tags: [risk]
+      summary: Rolling volatility and VIX over time
+      responses:
+        "200":
+          description: Volatility trend
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VolatilityPoint"
+
+  /risk/drawdown:
+    get:
+      operationId: getRiskDrawdown
+      tags: [risk]
+      summary: Maximum drawdown analysis
+      responses:
+        "200":
+          description: Drawdown series
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DrawdownPoint"
+
+  /risk/capital-charges:
+    get:
+      operationId: getRiskCapitalCharges
+      tags: [risk]
+      summary: Capital charges by asset type
+      responses:
+        "200":
+          description: Capital charges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CapitalChargeItem"
+
+  /esg/macro-data:
+    get:
+      operationId: getEsgMacroData
+      tags: [esg]
+      summary: GDP, CPI, treasury, VIX, credit spread series
+      responses:
+        "200":
+          description: Macro economic data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MacroData"
+
+  /esg/scenarios:
+    post:
+      operationId: runEsgScenario
+      tags: [esg]
+      summary: Run economic scenario simulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScenarioParams"
+      responses:
+        "200":
+          description: Scenario results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScenarioResult"
+
+  /optimization/efficient-frontier:
+    get:
+      operationId: getOptimizationEfficientFrontier
+      tags: [optimization]
+      summary: Mean-variance efficient frontier
+      responses:
+        "200":
+          description: Efficient frontier portfolios
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EfficientFrontierResult"
+
+  /optimization/optimal-portfolio:
+    get:
+      operationId: getOptimizationOptimalPortfolio
+      tags: [optimization]
+      summary: Maximum Sharpe ratio optimal portfolio
+      responses:
+        "200":
+          description: Optimal portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimalPortfolio"
+
+  /catastrophe/summary:
+    get:
+      operationId: getCatastropheSummary
+      tags: [catastrophe]
+      summary: Catastrophe exposure summary
+      responses:
+        "200":
+          description: Cat risk summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatastropheSummary"
+
+  /catastrophe/scenarios:
+    get:
+      operationId: getCatastropheScenarios
+      tags: [catastrophe]
+      summary: Catastrophe risk scenarios by year/state/event
+      responses:
+        "200":
+          description: Cat scenarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CatScenarioItem"
+
+  /catastrophe/reinsurance:
+    get:
+      operationId: getCatastropheReinsurance
+      tags: [catastrophe]
+      summary: Reinsurance treaty coverage
+      responses:
+        "200":
+          description: Reinsurance data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReinsuranceTreaty"
+
+  /catastrophe/cat-bonds:
+    get:
+      operationId: getCatastropheCatBonds
+      tags: [catastrophe]
+      summary: Cat bond portfolio
+      responses:
+        "200":
+          description: Cat bonds
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CatBond"
+
+  /catastrophe/ils-sidecars:
+    get:
+      operationId: getCatastropheIlsSidecars
+      tags: [catastrophe]
+      summary: ILS sidecar allocations
+      responses:
+        "200":
+          description: ILS sidecars
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IlsSidecar"
+
+  /catastrophe/geographic:
+    get:
+      operationId: getCatastropheGeographic
+      tags: [catastrophe]
+      summary: Geographic loss distribution by state
+      responses:
+        "200":
+          description: Geographic distribution
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeographicRiskItem"
+
+  /solvency/tracking:
+    get:
+      operationId: getSolvencyTracking
+      tags: [solvency]
+      summary: Solvency ratio and capital tracking
+      responses:
+        "200":
+          description: Solvency tracking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SolvencyTrackingItem"
+
+  /solvency/capital-adequacy:
+    get:
+      operationId: getSolvencyCapitalAdequacy
+      tags: [solvency]
+      summary: Capital adequacy and early warning indicators
+      responses:
+        "200":
+          description: Capital adequacy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapitalAdequacy"
+
+  /scenario/run:
+    post:
+      operationId: runCustomScenario
+      tags: [scenario]
+      summary: Run custom stress scenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomScenarioParams"
+      responses:
+        "200":
+          description: Custom scenario impact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomScenarioResult"
+
+  /assistant/chat:
+    post:
+      operationId: postAssistantChat
+      tags: [assistant]
+      summary: AI assistant chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Assistant response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +467,722 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    DashboardSummary:
+      type: object
+      properties:
+        totalAssets:
+          type: number
+        totalLiabilities:
+          type: number
+        solvencyRatio:
+          type: number
+        portfolioReturn:
+          type: number
+        portfolioRisk:
+          type: number
+        var95:
+          type: number
+        tvar95:
+          type: number
+        catastropheExposure:
+          type: number
+        reinsuranceCoverage:
+          type: number
+        fundingGap:
+          type: number
+        durationGap:
+          type: number
+        currentYear:
+          type: integer
+      required: [totalAssets, totalLiabilities, solvencyRatio, portfolioReturn, portfolioRisk, var95, tvar95, catastropheExposure, reinsuranceCoverage, fundingGap, durationGap, currentYear]
+
+    AllocationItem:
+      type: object
+      properties:
+        asset:
+          type: string
+        weight:
+          type: number
+        value:
+          type: number
+      required: [asset, weight, value]
+
+    SolvencyTrendItem:
+      type: object
+      properties:
+        year:
+          type: integer
+        solvencyRatio:
+          type: number
+        availableCapital:
+          type: number
+        requiredCapital:
+          type: number
+      required: [year, solvencyRatio, availableCapital, requiredCapital]
+
+    RiskHeatmapItem:
+      type: object
+      properties:
+        category:
+          type: string
+        subcategory:
+          type: string
+        severity:
+          type: number
+        likelihood:
+          type: number
+        riskScore:
+          type: number
+      required: [category, subcategory, severity, likelihood, riskScore]
+
+    AlmProjection:
+      type: object
+      properties:
+        coverageRatio:
+          type: number
+        fundingGap:
+          type: number
+        durationGap:
+          type: number
+        assetDuration:
+          type: number
+        liabilityDuration:
+          type: number
+        convexityAsset:
+          type: number
+        convexityLiability:
+          type: number
+        totalAssetPV:
+          type: number
+        totalLiabilityPV:
+          type: number
+        projections:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlmProjectionItem"
+      required: [coverageRatio, fundingGap, durationGap, assetDuration, liabilityDuration, convexityAsset, convexityLiability, totalAssetPV, totalLiabilityPV, projections]
+
+    AlmProjectionItem:
+      type: object
+      properties:
+        year:
+          type: integer
+        policyType:
+          type: string
+        expectedPayout:
+          type: number
+        presentValue:
+          type: number
+        discountRate:
+          type: number
+        inflationRate:
+          type: number
+      required: [year, policyType, expectedPayout, presentValue, discountRate, inflationRate]
+
+    DurationAnalysis:
+      type: object
+      properties:
+        macaulayDurationAsset:
+          type: number
+        modifiedDurationAsset:
+          type: number
+        macaulayDurationLiability:
+          type: number
+        modifiedDurationLiability:
+          type: number
+        durationGap:
+          type: number
+        dollarDurationGap:
+          type: number
+        basisPointValue:
+          type: number
+        byPolicyType:
+          type: array
+          items:
+            type: object
+            properties:
+              policyType:
+                type: string
+              duration:
+                type: number
+              pv:
+                type: number
+            required: [policyType, duration, pv]
+      required: [macaulayDurationAsset, modifiedDurationAsset, macaulayDurationLiability, modifiedDurationLiability, durationGap, dollarDurationGap, basisPointValue, byPolicyType]
+
+    CashflowMatchItem:
+      type: object
+      properties:
+        year:
+          type: integer
+        policyType:
+          type: string
+        expectedPayout:
+          type: number
+        assetCashflow:
+          type: number
+        surplus:
+          type: number
+        cumulativeSurplus:
+          type: number
+      required: [year, policyType, expectedPayout, assetCashflow, surplus, cumulativeSurplus]
+
+    PortfolioSummary:
+      type: object
+      properties:
+        totalValue:
+          type: number
+        annualReturn:
+          type: number
+        volatility:
+          type: number
+        sharpeRatio:
+          type: number
+        var95:
+          type: number
+        tvar95:
+          type: number
+        maxDrawdown:
+          type: number
+        beta:
+          type: number
+        alpha:
+          type: number
+        informationRatio:
+          type: number
+      required: [totalValue, annualReturn, volatility, sharpeRatio, var95, tvar95, maxDrawdown, beta, alpha, informationRatio]
+
+    HoldingItem:
+      type: object
+      properties:
+        asset:
+          type: string
+        allocationWeight:
+          type: number
+        marketValue:
+          type: number
+        capitalCharge:
+          type: number
+        capitalRequired:
+          type: number
+        riskContribution:
+          type: number
+      required: [asset, allocationWeight, marketValue, capitalCharge, capitalRequired, riskContribution]
+
+    SectorExposureItem:
+      type: object
+      properties:
+        sector:
+          type: string
+        count:
+          type: integer
+        avgPE:
+          type: number
+        avgMarketCap:
+          type: number
+        weight:
+          type: number
+      required: [sector, count, avgPE, avgMarketCap, weight]
+
+    TimeSeriesPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        value:
+          type: number
+        return:
+          type: number
+      required: [date, value]
+
+    VarAnalysis:
+      type: object
+      properties:
+        historicalVar95:
+          type: number
+        historicalVar99:
+          type: number
+        parametricVar95:
+          type: number
+        parametricVar99:
+          type: number
+        tvar95:
+          type: number
+        tvar99:
+          type: number
+        maxDrawdown:
+          type: number
+        currentVix:
+          type: number
+        returnsDistribution:
+          type: array
+          items:
+            type: object
+            properties:
+              bucket:
+                type: string
+              count:
+                type: integer
+              frequency:
+                type: number
+            required: [bucket, count, frequency]
+      required: [historicalVar95, historicalVar99, parametricVar95, parametricVar99, tvar95, tvar99, maxDrawdown, currentVix, returnsDistribution]
+
+    VolatilityPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        rollingVolatility:
+          type: number
+        vix:
+          type: number
+        sp500Return:
+          type: number
+      required: [date, rollingVolatility, vix]
+
+    DrawdownPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        drawdown:
+          type: number
+        price:
+          type: number
+      required: [date, drawdown, price]
+
+    CapitalChargeItem:
+      type: object
+      properties:
+        assetType:
+          type: string
+        capitalCharge:
+          type: number
+        marketValue:
+          type: number
+        capitalRequired:
+          type: number
+        weight:
+          type: number
+      required: [assetType, capitalCharge, marketValue, capitalRequired, weight]
+
+    MacroData:
+      type: object
+      properties:
+        gdp:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeSeriesPoint"
+        cpi:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeSeriesPoint"
+        treasury:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeSeriesPoint"
+        vix:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeSeriesPoint"
+        creditSpread:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeSeriesPoint"
+      required: [gdp, cpi, treasury, vix, creditSpread]
+
+    ScenarioParams:
+      type: object
+      properties:
+        scenario:
+          type: string
+          enum: [bull, bear, high_inflation, recession, rate_shock, credit_widening]
+        interestRateShock:
+          type: number
+        equityShock:
+          type: number
+        inflationShock:
+          type: number
+        creditSpreadShock:
+          type: number
+        gdpShock:
+          type: number
+      required: [scenario]
+
+    ScenarioResult:
+      type: object
+      properties:
+        scenario:
+          type: string
+        portfolioImpact:
+          type: number
+        liabilityImpact:
+          type: number
+        solvencyImpact:
+          type: number
+        varImpact:
+          type: number
+        projectedReturn:
+          type: number
+        projectedVolatility:
+          type: number
+        assumptions:
+          type: object
+          properties:
+            interestRateShock:
+              type: number
+            equityShock:
+              type: number
+            inflationShock:
+              type: number
+            creditSpreadShock:
+              type: number
+            gdpShock:
+              type: number
+          required: [interestRateShock, equityShock, inflationShock, creditSpreadShock, gdpShock]
+        timeSeries:
+          type: array
+          items:
+            type: object
+            properties:
+              month:
+                type: integer
+              portfolioValue:
+                type: number
+              liabilityValue:
+                type: number
+              solvencyRatio:
+                type: number
+            required: [month, portfolioValue, liabilityValue, solvencyRatio]
+      required: [scenario, portfolioImpact, liabilityImpact, solvencyImpact, varImpact, projectedReturn, projectedVolatility, assumptions, timeSeries]
+
+    EfficientFrontierResult:
+      type: object
+      properties:
+        frontier:
+          type: array
+          items:
+            type: object
+            properties:
+              risk:
+                type: number
+              return:
+                type: number
+              sharpe:
+                type: number
+              weights:
+                type: object
+                additionalProperties:
+                  type: number
+            required: [risk, return, sharpe, weights]
+        currentPortfolio:
+          type: object
+          properties:
+            risk:
+              type: number
+            return:
+              type: number
+            sharpe:
+              type: number
+          required: [risk, return, sharpe]
+        minVariancePortfolio:
+          type: object
+          properties:
+            risk:
+              type: number
+            return:
+              type: number
+            weights:
+              type: object
+              additionalProperties:
+                type: number
+          required: [risk, return, weights]
+      required: [frontier, currentPortfolio, minVariancePortfolio]
+
+    OptimalPortfolio:
+      type: object
+      properties:
+        weights:
+          type: object
+          additionalProperties:
+            type: number
+        expectedReturn:
+          type: number
+        expectedRisk:
+          type: number
+        sharpeRatio:
+          type: number
+        improvementVsCurrent:
+          type: number
+        riskBudget:
+          type: array
+          items:
+            type: object
+            properties:
+              asset:
+                type: string
+              riskContribution:
+                type: number
+              percentageRisk:
+                type: number
+            required: [asset, riskContribution, percentageRisk]
+      required: [weights, expectedReturn, expectedRisk, sharpeRatio, improvementVsCurrent, riskBudget]
+
+    CatastropheSummary:
+      type: object
+      properties:
+        totalInsuredLoss:
+          type: number
+        totalReinsuranceRecovery:
+          type: number
+        totalNetLoss:
+          type: number
+        recoveryRate:
+          type: number
+        catBondTotalPrincipal:
+          type: number
+        catBondExpectedLoss:
+          type: number
+        ilsTotalCapital:
+          type: number
+        reinsuranceTotalCoverage:
+          type: number
+        femaProjectCount:
+          type: integer
+        topEventType:
+          type: string
+        topState:
+          type: string
+      required: [totalInsuredLoss, totalReinsuranceRecovery, totalNetLoss, recoveryRate, catBondTotalPrincipal, catBondExpectedLoss, ilsTotalCapital, reinsuranceTotalCoverage, femaProjectCount, topEventType, topState]
+
+    CatScenarioItem:
+      type: object
+      properties:
+        year:
+          type: integer
+        state:
+          type: string
+        eventType:
+          type: string
+        returnPeriodYears:
+          type: integer
+        occurrenceProbability:
+          type: number
+        economicLoss:
+          type: number
+        insuredLoss:
+          type: number
+        reinsuranceRecovery:
+          type: number
+        netInsurerLoss:
+          type: number
+        vixRegime:
+          type: string
+        interestRateRegime:
+          type: string
+      required: [year, state, eventType, returnPeriodYears, occurrenceProbability, economicLoss, insuredLoss, reinsuranceRecovery, netInsurerLoss, vixRegime, interestRateRegime]
+
+    ReinsuranceTreaty:
+      type: object
+      properties:
+        treatyId:
+          type: string
+        treatyType:
+          type: string
+        coverageLimit:
+          type: number
+        retention:
+          type: number
+        premium:
+          type: number
+        reinsurer:
+          type: string
+        netProtection:
+          type: number
+      required: [treatyId, treatyType, coverageLimit, retention, premium, reinsurer, netProtection]
+
+    CatBond:
+      type: object
+      properties:
+        bondId:
+          type: string
+        principal:
+          type: number
+        couponRate:
+          type: number
+        triggerProbability:
+          type: number
+        expectedLoss:
+          type: number
+        expectedReturn:
+          type: number
+      required: [bondId, principal, couponRate, triggerProbability, expectedLoss, expectedReturn]
+
+    IlsSidecar:
+      type: object
+      properties:
+        sidecarId:
+          type: string
+        capitalAllocated:
+          type: number
+        expectedReturn:
+          type: number
+        riskScore:
+          type: integer
+      required: [sidecarId, capitalAllocated, expectedReturn, riskScore]
+
+    GeographicRiskItem:
+      type: object
+      properties:
+        state:
+          type: string
+        totalInsuredLoss:
+          type: number
+        totalEconomicLoss:
+          type: number
+        eventCount:
+          type: integer
+        avgNetLoss:
+          type: number
+        topEventType:
+          type: string
+      required: [state, totalInsuredLoss, totalEconomicLoss, eventCount, avgNetLoss, topEventType]
+
+    SolvencyTrackingItem:
+      type: object
+      properties:
+        year:
+          type: integer
+        availableCapital:
+          type: number
+        requiredCapital:
+          type: number
+        solvencyRatio:
+          type: number
+        capitalSurplus:
+          type: number
+        status:
+          type: string
+      required: [year, availableCapital, requiredCapital, solvencyRatio, capitalSurplus, status]
+
+    CapitalAdequacy:
+      type: object
+      properties:
+        currentSolvencyRatio:
+          type: number
+        averageSolvencyRatio:
+          type: number
+        minSolvencyRatio:
+          type: number
+        maxSolvencyRatio:
+          type: number
+        earlyWarningTriggered:
+          type: boolean
+        criticalThreshold:
+          type: number
+        warningThreshold:
+          type: number
+        capitalSurplus:
+          type: number
+        scrComponents:
+          type: array
+          items:
+            type: object
+            properties:
+              component:
+                type: string
+              amount:
+                type: number
+              percentage:
+                type: number
+            required: [component, amount, percentage]
+      required: [currentSolvencyRatio, averageSolvencyRatio, minSolvencyRatio, maxSolvencyRatio, earlyWarningTriggered, criticalThreshold, warningThreshold, capitalSurplus, scrComponents]
+
+    CustomScenarioParams:
+      type: object
+      properties:
+        gdpShock:
+          type: number
+        inflationShock:
+          type: number
+        interestRateShock:
+          type: number
+        creditSpreadShock:
+          type: number
+        equityShock:
+          type: number
+        catastropheShock:
+          type: number
+      required: [gdpShock, inflationShock, interestRateShock, creditSpreadShock, equityShock, catastropheShock]
+
+    CustomScenarioResult:
+      type: object
+      properties:
+        portfolioImpact:
+          type: number
+        portfolioImpactPct:
+          type: number
+        liabilityImpact:
+          type: number
+        liabilityImpactPct:
+          type: number
+        solvencyRatioAfter:
+          type: number
+        solvencyImpact:
+          type: number
+        var95After:
+          type: number
+        catastropheLossAdditional:
+          type: number
+        stressedPortfolioValue:
+          type: number
+        stressedLiabilityValue:
+          type: number
+        breakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              factor:
+                type: string
+              impact:
+                type: number
+              description:
+                type: string
+            required: [factor, impact, description]
+      required: [portfolioImpact, portfolioImpactPct, liabilityImpact, liabilityImpactPct, solvencyRatioAfter, solvencyImpact, var95After, catastropheLossAdditional, stressedPortfolioValue, stressedLiabilityValue, breakdown]
+
+    ChatRequest:
+      type: object
+      properties:
+        message:
+          type: string
+        conversationHistory:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              content:
+                type: string
+            required: [role, content]
+      required: [message]
+
+    ChatResponse:
+      type: object
+      properties:
+        response:
+          type: string
+        sources:
+          type: array
+          items:
+            type: string
+        metrics:
+          type: object
+          additionalProperties:
+            type: number
+      required: [response, sources]
