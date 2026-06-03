@@ -342,27 +342,6 @@ http://localhost:3000
 
 ![Dashboard](docs/dashboard-preview.png)
 
-## ALM Engine
-
-![ALM](docs/alm-engine.png)
-
-## Portfolio Analytics
-
-![Portfolio](docs/portfolio.png)
-
-## Risk Engine
-
-![Risk](docs/risk-engine.png)
-
-## Scenario Builder
-
-![Scenario](docs/scenario-builder.png)
-
-## AI Assistant
-
-![AI](docs/ai-assistant.png)
-
----
 
 # 🎓 Learning Outcomes
 
