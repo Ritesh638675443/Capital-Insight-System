@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-const API = `${BASE}/api`;
+const API = "http://localhost:3000/api";
+
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API}${path}`, {
